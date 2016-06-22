@@ -1,80 +1,59 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Geolocation</title>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <meta charset="utf-8">
-    <style>
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-      #map {
-        height: 100%;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="map"></div>
-    <script>
-// Note: This example requires that you consent to location sharing when
-// prompted by your browser. If you see the error "The Geolocation service
-// failed.", it means you probably did not give permission for the browser to
-// locate you.
-
-function initMap() {
-  var map = new google.maps.Map(document.getElementById('map'), {
-    center: {lat: 39.904, lng: 116.407},
-    zoom: 15
-  });
-  var infoWindow = new google.maps.InfoWindow({map: map});
-
-  // Try HTML5 geolocation.
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(function(position) {
-      var pos = {
-        lat: position.coords.latitude-0.0018,
-        lng: position.coords.longitude+0.0043
-      };
-
-      //infoWindow.setPosition(pos);
-      //infoWindow.setContent('Location found.');
-      map.setCenter(pos);
-      addMarker(pos,map);
-
-    }, function() {
-      handleLocationError(true, infoWindow, map.getCenter());
-    });
-  } else {
-    // Browser doesn't support Geolocation
-    handleLocationError(false, infoWindow, map.getCenter());
-  }
-}
-
-function handleLocationError(browserHasGeolocation, infoWindow, pos) {
-  infoWindow.setPosition(pos);
-  infoWindow.setContent(browserHasGeolocation ?
-                        'Error: The Geolocation service failed.' :
-                        'Error: Your browser doesn\'t support geolocation.');
-} 
-
-
-// Adds a marker to the map.
-function addMarker(location, map) {
-  // Add the marker at the clicked location, and add the next-available label
-  // from the array of alphabetical characters.
-  var marker = new google.maps.Marker({
-    position: location,
-    title: "MyLocation",
-    map: map,
-    animation: google.maps.Animation.DROP
-  });
-}
-
-    </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCktGIsye5Hz_W6Wo8riPCJF3bnR19CzVs&signed_in=true&callback=initMap"
-        async defer>
-    </script>
-  </body>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>DingDing Parking - Find Your Parking Space</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head> 
+<body> 
+    <!--  通过 iframe 嵌入前端定位组件，此处没有隐藏定位组件，使用了定位组件的在定位中视觉特效  -->
+    <iframe id="geoPage" width="100%" height="30%" frameborder=0 scrolling="no"
+    src="http://apis.map.qq.com/tools/geolocation?key=OB4BZ-D4W3U-B7VVO-4PJWW-6TKDJ-WPB77&referer=myapp&effect=zoom"></iframe>
+     
+    <script> type="text/JavaScript">
+   
+        var loc;
+        var isMapInit = false;
+        //监听定位组件的message事件
+        window.addEventListener('message', function(event) { 
+            loc = event.data; // 接收位置信息
+            console.log('location', loc);
+       
+            if(loc  && loc.module == 'geolocation') { //定位成功,防止其他应用也会向该页面post信息，需判断module是否为'geolocation'
+                var markUrl = 'http://apis.map.qq.com/tools/poimarker' +
+                '?marker=coord:' + loc.lat + ',' + loc.lng + 
+                ';title:我的位置;addr:' + (loc.addr || loc.city) + 
+                '&key=OB4BZ-D4W3U-B7VVO-4PJWW-6TKDJ-WPB77&referer=myapp';
+                //给位置展示组件赋值
+                document.getElementById('markPage').src = markUrl;
+            } else { //定位组件在定位失败后，也会触发message, event.data为null
+                alert('定位失败'); 
+            }
+ 
+            /* 另一个使用方式 
+            if (!isMapInit && !loc) { //首次定位成功，创建地图
+                isMapInit = true;
+                createMap(event.data);
+            } else if (event.data) { //地图已经创建，再收到新的位置信息后更新地图中心点
+                updateMapCenter(event.data);
+            }
+            */
+        }, false);
+        //为防止定位组件在message事件监听前已经触发定位成功事件，在此处显示请求一次位置信息
+        document.getElementById("geoPage").contentWindow.postMessage('getLocation', '*');
+         
+        //设置6s超时，防止定位组件长时间获取位置信息未响应
+        setTimeout(function() {
+            if(!loc) {
+                //主动与前端定位组件通信（可选），获取粗糙的IP定位结果
+            document.getElementById("geoPage")
+                .contentWindow.postMessage('getLocation.robust', '*');
+            }
+        }, 6000); //6s为推荐值，业务调用方可根据自己的需求设置改时间，不建议太短
+    </script> 
+     
+    <!-- 接收到位置信息后 通过 iframe 嵌入位置标注组件 -->
+    <iframe id="markPage" width="100%" height="70%" frameborder=0 scrolling="no" src=""></iframe> 
+</body> 
 </html>
