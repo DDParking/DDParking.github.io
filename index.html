@@ -1,59 +1,48 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>DingDing Parking - Find Your Parking Space</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" type="text/css" href="style.css">
-</head> 
-<body> 
-    <!--  通过 iframe 嵌入前端定位组件，此处没有隐藏定位组件，使用了定位组件的在定位中视觉特效  -->
-    <iframe id="geoPage" width="100%" height="30%" frameborder=0 scrolling="no"
-    src="http://apis.map.qq.com/tools/geolocation?key=OB4BZ-D4W3U-B7VVO-4PJWW-6TKDJ-WPB77&referer=myapp&effect=zoom"></iframe>
-     
-    <script type="text/JavaScript">
-   
-        var loc;
-        var isMapInit = false;
-        //监听定位组件的message事件
-        window.addEventListener('message', function(event) { 
-            loc = event.data; // 接收位置信息
-            console.log('location', loc);
-       
-            if(loc  && loc.module == 'geolocation') { //定位成功,防止其他应用也会向该页面post信息，需判断module是否为'geolocation'
-                var markUrl = 'http://apis.map.qq.com/tools/poimarker' +
-                '?marker=coord:' + loc.lat + ',' + loc.lng + 
-                ';title:我的位置;addr:' + (loc.addr || loc.city) + 
-                '&key=OB4BZ-D4W3U-B7VVO-4PJWW-6TKDJ-WPB77&referer=myapp';
-                //给位置展示组件赋值
-                document.getElementById('markPage').src = markUrl;
-            } else { //定位组件在定位失败后，也会触发message, event.data为null
-                alert('定位失败'); 
-            }
- 
-            /* 另一个使用方式 
-            if (!isMapInit && !loc) { //首次定位成功，创建地图
-                isMapInit = true;
-                createMap(event.data);
-            } else if (event.data) { //地图已经创建，再收到新的位置信息后更新地图中心点
-                updateMapCenter(event.data);
-            }
-            */
-        }, false);
-        //为防止定位组件在message事件监听前已经触发定位成功事件，在此处显示请求一次位置信息
-        document.getElementById("geoPage").contentWindow.postMessage('getLocation', '*');
-         
-        //设置6s超时，防止定位组件长时间获取位置信息未响应
-        setTimeout(function() {
-            if(!loc) {
-                //主动与前端定位组件通信（可选），获取粗糙的IP定位结果
-            document.getElementById("geoPage")
-                .contentWindow.postMessage('getLocation.robust', '*');
-            }
-        }, 6000); //6s为推荐值，业务调用方可根据自己的需求设置改时间，不建议太短
-    </script> 
-     
-    <!-- 接收到位置信息后 通过 iframe 嵌入位置标注组件 -->
-    <iframe id="markPage" width="100%" height="70%" frameborder=0 scrolling="no" src=""></iframe> 
-</body> 
+  <script charset="utf-8" src="http://map.qq.com/api/js?v=2.exp&libraries=convertor"></script>
+  <script>
+    function getLocation(){
+    //判断是否支持 获取本地位置
+      if (navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(showPosition);
+      }
+      else{
+        x.innerHTML="浏览器不支持定位.";
+      }
+    }
+    function showPosition(position){
+      var lat=position.coords.latitude; 
+      var lng=position.coords.longitude;
+      //调用地图命名空间中的转换接口   type的可选值为 1:gps经纬度，2:搜狗经纬度，3:百度经纬度，4:mapbar经纬度，5:google经纬度，6:搜狗墨卡托
+      qq.maps.convertor.translate(new qq.maps.LatLng(lat,lng), 1, function(res){
+        //取出经纬度并且赋值
+        latlng = res[0];
+        var map = new qq.maps.Map(document.getElementById("container"),{
+        center:  latlng,
+        zoom: 13
+        });
+    //设置marker标记
+        var marker = new qq.maps.Marker({
+            map : map,
+            position : latlng
+        });
+      });
+    }
+  </script>
+</head>
+
+<body onload="getLocation()">
+  <div id="container"></div>
+
+</body>
+<footer id="page_footer">
+  <p>&copy:2016 JI & 丁丁停车</p>
+</footer>
 </html>
