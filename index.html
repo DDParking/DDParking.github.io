@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" type="text/css" href="style.css">
   <script charset="utf-8" src="http://map.qq.com/api/js?v=2.exp&libraries=convertor&key=X6VBZ-4HE33-XZ23C-3MZ67-ZKCO2-VQFH2"></script>
-  <script type="text/javascript">
+  <script>
     function getLocation(){
     //Get user's location
       if (navigator.geolocation){
@@ -20,41 +20,54 @@
     function showPosition(position){
       var lat=position.coords.latitude; 
       var lng=position.coords.longitude;
+      var center=new qq.maps.LatLng(lat,lng);
+      var map = new qq.maps.Map(document.getElementById("container"),{
+        center:  center,
+        zoom: 16
+      });
       //调用地图命名空间中的转换接口   type的可选值为 1:gps经纬度，2:搜狗经纬度，3:百度经纬度，4:mapbar经纬度，5:google经纬度，6:搜狗墨卡托
       qq.maps.convertor.translate(new qq.maps.LatLng(lat,lng), 1, function(res){
         //取出经纬度并且赋值
-        latlng = res[0];
-        var map = new qq.maps.Map(document.getElementById("container"),{
-        center:  latlng,
-        zoom: 16
-        });
-        var anchor = new qq.maps.Point(0，39),
-        size = new qq.maps.Size(42, 68),
-        origin = new qq.maps.Point(0, 0),
-        myicon = new qq.maps.MarkerImage(
-            "icons/redmarker.png",
-            size,
-            origin,
-            anchor
-        );
+        latlng = res[0];     
         //设置marker标记for user's location
         var marker = new qq.maps.Marker({
             map : map,
             position : latlng,
             animation: qq.maps.MarkerAnimation.BOUNCE,
+            icon: new qq.maps.MarkerImage("icons/redmarker.png"),
+            title:'You'
         });
-        marker.setIcon(myicon);
       });
-    }
-    /*function getParkingLosts(){
-      var parkingLots = [];
-      parkingLots[0]={
-        name: "SJTU Parking Lot No.1",
-        latitude: 31.02;
-        longtitude: 121.43;
-        size: 10;
+      var parkingLotsPos = [];
+      var markers = [];
+      var info = new qq.maps.InfoWindow({
+        map: map
+      });
+      parkingLotsPos[0]=new qq.maps.LatLng(31.0261, 121.4377);
+      parkingLotsPos[1]=new qq.maps.LatLng(31.0236, 121.4389);
+      parkingLotsPos[2]=new qq.maps.LatLng(31.0272, 121.4399);
+      parkingLotsPos[3]=new qq.maps.LatLng(31.0242, 121.4417);
+      //var latlng1=new qq.maps.LatLng(31.0236,121.4389);
+      //var latlng1=new qq.maps.LatLng(31.0261,121.4377);
+      //var latlng1=new qq.maps.LatLng(31.0272,121.4399);
+      //var latlng1=new qq.maps.LatLng(31.0242,121.4417);
+      for (var i=0, l=parkingLotsPos.length; i<l; i++){
+        var parkingPos=parkingLotsPos[i];
+        (function(n){
+          var marker = new qq.maps.Marker({
+            map: map,
+            position: parkingPos,
+          });
+          marker.setTitle(i+1);
+          markers.push(marker);
+          qq.maps.event.addListener(marker, 'click', function(){
+            info.open();
+            info.setContent('<div style="text-align:center;white-space:nowrap;' + 'margin:10px;">'+'No.'+ n +'</div>');
+            info.setPosition(parkingLotsPos[n])
+          });          
+        })(i);
       }
-    }*/
+    }
     
   </script>
 </head>
@@ -63,7 +76,9 @@
   <div id="container"></div>
 
 </body>
+
 <footer id="page_footer">
   <p>&copy:2016 JI & 丁丁停车</p>
 </footer>
+
 </html>
